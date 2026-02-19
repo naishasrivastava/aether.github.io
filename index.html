@@ -1,1 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>aether - fireworks sandbox</title>
+    <link rel="icon" type="image/png" href="fav.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #fffbeb;
+            color: #78350f;
+            line-height: 1.6;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulance type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E");
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 2rem 1rem 2rem;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            text-transform: lowercase;
+            color: #78350f;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            color: #92400e;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2.5rem;
+            margin-bottom: 2rem;
+            align-items: start;
+        }
+
+        .controls-panel {
+            background: white;
+            padding: 2rem;
+            border: 2px solid #78350f;
+            box-shadow: 6px 6px 0px rgba(120, 53, 15, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .controls-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1.75rem;
+        }
+
+        .control-section {
+            padding-bottom: 1.75rem;
+            border-bottom: 2px solid #fef3c7;
+        }
+
+        .control-section:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .control-section h3 {
+            font-size: 1rem;
+            font-weight: 900;
+            text-transform: lowercase;
+            color: #1d4ed8;
+            margin-bottom: 1rem;
+        }
+
+        .color-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            color: #78350f;
+            margin-bottom: 0.375rem;
+            display: block;
+        }
+
+        .color-picker {
+            width: 100%;
+            height: 42px;
+            border: 2px solid #78350f;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 0.625rem;
+            display: block;
+        }
+
+        .color-picker:last-child { margin-bottom: 0; }
+
+        .inline-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            border: 2px solid #78350f;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+            margin-bottom: 0.625rem;
+            font-size: 0.875rem;
+            transition: all 0.3s;
+            box-shadow: 3px 3px 0px rgba(120, 53, 15, 0.15);
+        }
+
+        .btn:last-child { margin-bottom: 0; }
+
+        .btn:hover:not(:disabled):not(.btn-surprise):not(.btn-secondary) {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0px rgba(120, 53, 15, 0.2);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #78350f;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #fff4ca !important;
+            color: #78350f !important;
+            transform: translateY(-2px);
+            box-shadow: 4px 4px 0px rgba(120, 53, 15, 0.2);
+        }
+
+        .btn-surprise {
+            background: linear-gradient(135deg, #5C81F6 0%, #9B87F5 100%);
+            border: 2px solid #78350f;
+            color: white;
+            font-size: 0.875rem;
+            margin-bottom: 0.625rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-surprise:last-child { margin-bottom: 0; }
+
+        .btn-surprise:hover:not(:disabled) {
+            background: linear-gradient(135deg, #4A6FD4 0%, #8975D3 100%) !important;
+            color: white !important;
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 4px 4px 0px rgba(120, 53, 15, 0.2);
+        }
+
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle-anim 0.7s ease forwards;
+            font-size: 1.1rem;
+        }
+
+        @keyframes sparkle-anim {
+            0%   { opacity: 1; transform: translate(-50%, -50%) scale(0.5); }
+            50%  { opacity: 1; transform: translate(-50%, -50%) scale(1.4); }
+            100% { opacity: 0; transform: translate(-50%, -120%) scale(1); }
+        }
+
+        .tool-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.625rem;
+        }
+
+        .tool-btn {
+            padding: 0.75rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            border: 2px solid #78350f;
+            background: white;
+            color: #78350f;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            box-shadow: 2px 2px 0px rgba(120, 53, 15, 0.15);
+            text-align: center;
+        }
+
+        .tool-btn.active { background: #2563eb; color: white; }
+        .tool-btn:hover { transform: translateY(-1px); box-shadow: 3px 3px 0px rgba(120, 53, 15, 0.2); }
+
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group:last-child { margin-bottom: 0; }
+
+        .slider-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            color: #78350f;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            background: #fef3c7;
+            outline: none;
+            border: 2px solid #78350f;
+            -webkit-appearance: none;
+            border-radius: 4px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid #78350f;
+            border-radius: 50%;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #2563eb;
+            cursor: pointer;
+            border: 2px solid #78350f;
+            border-radius: 50%;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 4rem;
+            border: 2px solid #78350f;
+            box-shadow: 6px 6px 0px rgba(120, 53, 15, 0.15);
+            background: white;
+            width: 100%;
+            min-height: 700px;
+        }
+
+        #canvasContainer canvas {
+            border: 2px solid #78350f !important;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #92400e;
+            text-transform: lowercase;
+            margin-top: 0.5rem;
+        }
+
+        .stat-val { color: #1d4ed8; }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.625rem;
+            margin-bottom: 0.625rem;
+        }
+
+        .btn-row .btn { margin-bottom: 0; }
+
+        footer {
+            background: white;
+            border-top: 2px solid #78350f;
+            padding: 2rem;
+            text-align: center;
+            width: 100%;
+            margin-top: 2rem;
+        }
+
+        .contact-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            text-decoration: none;
+            border: 2px solid #78350f;
+            transition: all 0.3s;
+            box-shadow: 4px 4px 0px rgba(120, 53, 15, 0.2);
+        }
+
+        .contact-btn:hover { transform: translateY(-2px); box-shadow: 6px 6px 0px rgba(120, 53, 15, 0.25); }
+        .contact-btn.email     { background: #2563eb; color: white; }
+        .contact-btn.portfolio { background: #78350f; color: white; }
+        .contact-btn.linkedin  { background: #fef3c7; color: #78350f; }
+
+        footer p {
+            color: #92400e;
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: lowercase;
+            margin: 0.25rem 0;
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout { grid-template-columns: 280px 1fr; gap: 1.5rem; }
+            .controls-panel { padding: 1.5rem; }
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+            .subtitle { font-size: 1rem; margin-bottom: 2rem; }
+            .main-layout { grid-template-columns: 1fr; gap: 1.5rem; }
+            .controls-panel { padding: 1.5rem; gap: 1.25rem; position: static; }
+            .control-section { padding-bottom: 1.25rem; border-bottom: 2px solid #fef3c7; }
+            .control-section:last-child { border-bottom: none; padding-bottom: 0; }
+            .canvas-container { padding: 2rem; min-height: 500px; }
+            .contact-links { flex-direction: column; align-items: stretch; gap: 1rem; }
+            .contact-btn { width: 100%; justify-content: center; }
+            footer { padding: 1.5rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>aether</h1>
+        <p class="subtitle">❊ release a spark, follow its path ❊</p>
+
+        <div class="main-layout">
+            <div class="controls-panel">
+                <div class="controls-row">
+
+                    <div class="control-section">
+                        <h3>launch mode</h3>
+                        <div class="tool-selector">
+                            <button class="tool-btn active" onclick="setLaunchMode('firework', this)">🎆 firework</button>
+                            <button class="tool-btn" onclick="setLaunchMode('fountain', this)">⛲ fountain</button>
+                            <button class="tool-btn" onclick="setLaunchMode('sparkle', this)">🌟 sparkle</button>
+                            <button class="tool-btn" onclick="setLaunchMode('comet', this)">💫 comet</button>
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>color</h3>
+                        <div class="inline-grid">
+                            <div>
+                                <span class="color-label">primary</span>
+                                <input type="color" id="color1" class="color-picker" value="#2563eb">
+                            </div>
+                            <div>
+                                <span class="color-label">secondary</span>
+                                <input type="color" id="color2" class="color-picker" value="#f97316">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>settings</h3>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+                            <div class="slider-group" style="margin-bottom:0;">
+                                <label>per burst: <span id="countVal">80</span></label>
+                                <input type="range" id="countSlider" min="10" max="300" value="80">
+                            </div>
+                            <div class="slider-group" style="margin-bottom:0;">
+                                <label>size: <span id="sizeVal">4</span>px</label>
+                                <input type="range" id="sizeSlider" min="1" max="16" value="4">
+                            </div>
+                            <div class="slider-group" style="margin-bottom:0;">
+                                <label>gravity: <span id="gravVal">0.12</span></label>
+                                <input type="range" id="gravSlider" min="0" max="50" value="12">
+                            </div>
+                            <div class="slider-group" style="margin-bottom:0;">
+                                <label>trail fade: <span id="fadeVal">18</span>%</label>
+                                <input type="range" id="fadeSlider" min="2" max="60" value="18">
+                            </div>
+                        </div>
+                        <div class="stat-row">
+                            <span>active particles</span>
+                            <span class="stat-val" id="particleStat">0</span>
+                        </div>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>presets</h3>
+                        <button class="btn btn-surprise" id="surpriseBtn" onclick="cyclePreset(event)">✨ surprise me!</button>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>actions</h3>
+                        <button class="btn btn-secondary" onclick="clearField()">clear field</button>
+                    </div>
+
+                    <div class="control-section">
+                        <h3>save</h3>
+                        <button class="btn btn-secondary" onclick="saveArt('transparent')">transparent</button>
+                        <button class="btn btn-secondary" onclick="saveArt('bg')">with background</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="canvas-container" id="canvasContainer"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="contact-links">
+            <a href="mailto:ns2229@cornell.edu" class="contact-btn email"><span>✉</span><span>email</span></a>
+            <a href="https://naishasrivastava.github.io/" target="_blank" class="contact-btn portfolio"><span>★</span><span>portfolio</span></a>
+            <a href="https://www.linkedin.com/in/naishasrivastava" target="_blank" class="contact-btn linkedin"><span>in</span><span>linkedin</span></a>
+        </div>
+        <p>made with ♥ by naisha srivastava</p>
+        <p>© 2026</p>
+    </footer>
+
+    <script>
+        let particles = [];
+        let lavaInterval = null;
+        let launchMode = 'firework';
+        let burstCount = 80;
+        let particleSize = 4;
+        let gravity = 0.12;
+        let fadeAmt = 18;
+        let col1, col2;
+        let canvasSize;
+        let isDragging = false;
+        let dragTimer = 0;
+
+        // ── Particle class ────────────────────────────────────────────
+        class Particle {
+            constructor(x, y, opts = {}) {
+                this.x = x;
+                this.y = y;
+                this.vx = opts.vx ?? random(-6, 6);
+                this.vy = opts.vy ?? random(-6, 6);
+                this.alpha = 255;
+                this.decay = opts.decay ?? random(2, 5);
+                this.size = (opts.size ?? particleSize) * random(0.6, 1.4);
+                this.col = opts.col ?? (random() > 0.5 ? col1 : col2);
+                this.grav = opts.grav ?? gravity;
+                this.shape = opts.shape ?? 'circle';
+                this.spin = random(-0.2, 0.2);
+                this.angle = random(TWO_PI);
+                this.trail = opts.trail ?? false;
+                this.history = [];
+                this.maxHistory = opts.trailLen ?? 0;
+                this.twinkle = opts.twinkle ?? false;
+            }
+
+            update() {
+                if (this.maxHistory > 0) {
+                    this.history.push({ x: this.x, y: this.y });
+                    if (this.history.length > this.maxHistory) this.history.shift();
+                }
+                this.vy += this.grav;
+                this.vx *= 0.98;
+                this.x += this.vx;
+                this.y += this.vy;
+                this.angle += this.spin;
+                this.alpha -= this.decay;
+            }
+
+            draw() {
+                if (this.history.length > 1) {
+                    noFill();
+                    for (let i = 1; i < this.history.length; i++) {
+                        const a = map(i, 0, this.history.length, 0, this.alpha * 0.4);
+                        stroke(red(this.col), green(this.col), blue(this.col), a);
+                        strokeWeight(this.size * (i / this.history.length) * 0.8);
+                        line(this.history[i-1].x, this.history[i-1].y,
+                             this.history[i].x,   this.history[i].y);
+                    }
+                    noStroke();
+                }
+
+                let alpha = this.alpha;
+                if (this.twinkle) alpha *= (0.6 + 0.4 * sin(frameCount * 0.3 + this.x));
+                if (alpha <= 0) return;
+
+                noStroke();
+                fill(red(this.col), green(this.col), blue(this.col), alpha * 0.25);
+                ellipse(this.x, this.y, this.size * 3.5);
+                fill(red(this.col), green(this.col), blue(this.col), alpha);
+
+                if (this.shape === 'circle') {
+                    ellipse(this.x, this.y, this.size);
+                } else if (this.shape === 'star') {
+                    drawStar(this.x, this.y, this.size * 0.4, this.size * 0.9, 5, this.angle);
+                } else if (this.shape === 'square') {
+                    push();
+                    translate(this.x, this.y);
+                    rotate(this.angle);
+                    rectMode(CENTER);
+                    rect(0, 0, this.size, this.size);
+                    pop();
+                } else if (this.shape === 'spark') {
+                    push();
+                    translate(this.x, this.y);
+                    rotate(atan2(this.vy, this.vx));
+                    fill(red(this.col), green(this.col), blue(this.col), alpha);
+                    ellipse(0, 0, this.size * 3, this.size * 0.6);
+                    pop();
+                }
+            }
+
+            isDead() { return this.alpha <= 0; }
+        }
+
+        function drawStar(x, y, r1, r2, pts, angle) {
+            beginShape();
+            for (let i = 0; i < pts * 2; i++) {
+                const r = i % 2 === 0 ? r2 : r1;
+                const a = angle + (PI / pts) * i;
+                vertex(x + cos(a) * r, y + sin(a) * r);
+            }
+            endShape(CLOSE);
+        }
+
+        // ── Burst factories ───────────────────────────────────────────
+
+        function burstFirework(x, y) {
+            const c = random() > 0.5 ? col1 : col2;
+            const shape = random(['circle', 'star', 'spark']);
+            for (let i = 0; i < burstCount; i++) {
+                const angle = (TWO_PI / burstCount) * i + random(-0.2, 0.2);
+                const speed = random(2, 9);
+                particles.push(new Particle(x, y, {
+                    vx: cos(angle) * speed,
+                    vy: sin(angle) * speed,
+                    col: c, shape,
+                    decay: random(1.5, 3.5),
+                    grav: gravity,
+                    trailLen: shape === 'spark' ? 6 : 0,
+                }));
+            }
+            for (let i = 0; i < 12; i++) {
+                particles.push(new Particle(x, y, {
+                    vx: random(-2, 2), vy: random(-2, 2),
+                    col: color(255, 255, 255),
+                    size: particleSize * 0.5,
+                    decay: 15, grav: 0, shape: 'circle',
+                }));
+            }
+        }
+
+        function burstFountain(x, y) {
+            for (let i = 0; i < Math.ceil(burstCount / 8); i++) {
+                const spread = random(-1.2, 1.2);
+                const speed = random(4, 11);
+                const c = lerpColor(col1, col2, random());
+                particles.push(new Particle(x, y, {
+                    vx: spread, vy: -speed, col: c,
+                    decay: random(1, 2.5),
+                    grav: gravity * 1.5,
+                    shape: 'spark', trailLen: 8,
+                    size: particleSize * random(0.5, 1.2),
+                }));
+            }
+        }
+
+        function burstLava(x, y) {
+            const lavaColors = [
+                color(255, 50,  0),
+                color(255, 110, 0),
+                color(255, 170, 20),
+                color(200, 20,  0),
+            ];
+
+            // Chunky blobs — hard cap at 18
+            for (let i = 0; i < 18; i++) {
+                const spread = random(-2.5, 2.5);
+                const speed  = random(3, 9);
+                particles.push(new Particle(x, y, {
+                    vx: spread, vy: -speed,
+                    col: lavaColors[floor(random(lavaColors.length))],
+                    decay: random(1.2, 2.2),
+                    grav: 0.35,
+                    shape: 'circle',
+                    trailLen: 4,
+                    size: particleSize * random(1.4, 2.6),
+                }));
+            }
+
+            // Embers — hard cap at 14
+            for (let i = 0; i < 14; i++) {
+                const spread = random(-4, 4);
+                const speed  = random(6, 13);
+                particles.push(new Particle(x, y, {
+                    vx: spread, vy: -speed,
+                    col: lavaColors[floor(random(lavaColors.length))],
+                    decay: random(2.5, 5),
+                    grav: 0.2,
+                    shape: 'spark',
+                    trailLen: 7,
+                    size: particleSize * random(0.25, 0.7),
+                }));
+            }
+
+            // White-hot core — just 5
+            for (let i = 0; i < 5; i++) {
+                particles.push(new Particle(x, y, {
+                    vx: random(-1, 1), vy: random(-1, 1),
+                    col: color(255, 240, 200),
+                    shape: 'circle',
+                    decay: 12,
+                    grav: 0,
+                    size: particleSize * random(1, 2),
+                    trailLen: 0,
+                }));
+            }
+        }
+
+        function burstSparkle(x, y) {
+            for (let i = 0; i < burstCount; i++) {
+                const angle = random(TWO_PI);
+                const speed = random(0.3, 4);
+                const c = random() > 0.5 ? col1 : col2;
+                particles.push(new Particle(x, y, {
+                    vx: cos(angle) * speed,
+                    vy: sin(angle) * speed,
+                    col: c, shape: 'star',
+                    decay: random(0.5, 2),
+                    grav: gravity * 0.3,
+                    size: particleSize * random(0.4, 1.8),
+                    twinkle: true,
+                }));
+            }
+        }
+
+        function burstComet(x, y) {
+            const angle = random(TWO_PI);
+            const speed = random(6, 14);
+            const c = random() > 0.5 ? col1 : col2;
+            particles.push(new Particle(x, y, {
+                vx: cos(angle) * speed,
+                vy: sin(angle) * speed,
+                col: color(255, 255, 255),
+                shape: 'circle', decay: 0.8,
+                grav: gravity * 0.1,
+                size: particleSize * 2, trailLen: 20,
+            }));
+            for (let i = 0; i < burstCount; i++) {
+                const spread = random(-0.6, 0.6);
+                particles.push(new Particle(x, y, {
+                    vx: cos(angle + spread) * speed * random(0.2, 0.85),
+                    vy: sin(angle + spread) * speed * random(0.2, 0.85),
+                    col: i < burstCount / 2 ? c : lerpColor(c, color(255, 255, 200), random()),
+                    shape: random(['circle', 'spark']),
+                    decay: random(2, 5),
+                    grav: gravity * random(0.1, 0.5),
+                    size: particleSize * random(0.3, 1.1),
+                    trailLen: floor(random(0, 8)),
+                }));
+            }
+        }
+
+        function fire(x, y) {
+            if      (launchMode === 'firework')  burstFirework(x, y);
+            else if (launchMode === 'fountain')  burstFountain(x, y);
+            else if (launchMode === 'sparkle')   burstSparkle(x, y);
+            else if (launchMode === 'comet')     burstComet(x, y);
+        }
+
+        function fireFountainTick(x, y) {
+            // Use lava burst if lava preset is active (detected by high gravity + fountain mode)
+            if (launchMode === 'fountain' && gravity >= 0.25) burstLava(x, y);
+            else burstFountain(x, y);
+        }
+
+        // ── p5 lifecycle ──────────────────────────────────────────────
+
+        function setup() {
+            const cw = document.querySelector('.canvas-container').clientWidth;
+            canvasSize = Math.min(cw - 150, 750);
+            let cnv = createCanvas(canvasSize, canvasSize);
+            cnv.parent('canvasContainer');
+
+            col1 = color('#2563eb');
+            col2 = color('#f97316');
+
+            document.getElementById('countSlider').addEventListener('input', e => {
+                burstCount = parseInt(e.target.value);
+                document.getElementById('countVal').textContent = burstCount;
+            });
+            document.getElementById('sizeSlider').addEventListener('input', e => {
+                particleSize = parseInt(e.target.value);
+                document.getElementById('sizeVal').textContent = particleSize;
+            });
+            document.getElementById('gravSlider').addEventListener('input', e => {
+                gravity = parseInt(e.target.value) / 100;
+                document.getElementById('gravVal').textContent = gravity.toFixed(2);
+            });
+            document.getElementById('fadeSlider').addEventListener('input', e => {
+                fadeAmt = parseInt(e.target.value);
+                document.getElementById('fadeVal').textContent = fadeAmt;
+            });
+            document.getElementById('color1').addEventListener('input', e => { col1 = color(e.target.value); });
+            document.getElementById('color2').addEventListener('input', e => { col2 = color(e.target.value); });
+
+            background(8, 8, 20);
+        }
+
+        function draw() {
+            // High-alpha overlay so old frames are nearly fully erased each tick
+            // Using min fadeAmt*4.25 vs 200 means even at low fade settings the
+            // background stays clean — no residue buildup on the dark bg
+            noStroke();
+            fill(8, 8, 20, max(fadeAmt * 4.25, 180));
+            rect(0, 0, width, height);
+
+            if (isDragging && launchMode === 'fountain' && mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+                fireFountainTick(mouseX, mouseY);
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].isDead()) particles.splice(i, 1);
+            }
+
+            if (particles.length > 6000) particles.splice(0, particles.length - 6000);
+            document.getElementById('particleStat').textContent = particles.length;
+        }
+
+        function mousePressed() {
+            if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
+            isDragging = true;
+            if (launchMode !== 'fountain') fire(mouseX, mouseY);
+        }
+
+        function mouseDragged() {
+            if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) return;
+            isDragging = true;
+            dragTimer++;
+            if (launchMode !== 'fountain' && dragTimer % 8 === 0) fire(mouseX, mouseY);
+        }
+
+        function mouseReleased() { isDragging = false; dragTimer = 0; }
+
+        // ── Controls ─────────────────────────────────────────────────
+
+        function setLaunchMode(mode, el) {
+            launchMode = mode;
+            document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+            if (el) el.classList.add('active');
+        }
+
+        function clearField() {
+            particles = [];
+            if (lavaInterval) { clearInterval(lavaInterval); lavaInterval = null; }
+            background(8, 8, 20);
+        }
+
+        // ── Save ─────────────────────────────────────────────────────
+
+        function saveArt(mode) {
+            const DPR = 3;
+            const W = canvasSize * DPR;
+            const offscreen = document.createElement('canvas');
+            offscreen.width = W;
+            offscreen.height = W;
+            const ctx = offscreen.getContext('2d');
+
+            // Scale all drawing ops up
+            ctx.scale(DPR, DPR);
+
+            if (mode === 'bg') {
+                ctx.fillStyle = 'rgb(8,8,20)';
+                ctx.fillRect(0, 0, canvasSize, canvasSize);
+            }
+            // transparent: ctx starts clear
+
+            // Re-render every live particle using native canvas2D
+            for (const p of particles) {
+                const r = red(p.col), g = green(p.col), b = blue(p.col);
+                const a = p.alpha / 255;
+                if (a <= 0) continue;
+
+                // Trail history lines
+                if (p.history.length > 1) {
+                    for (let i = 1; i < p.history.length; i++) {
+                        const ta = (i / p.history.length) * a * 0.4;
+                        const tw = p.size * (i / p.history.length) * 0.8;
+                        ctx.strokeStyle = `rgba(${r},${g},${b},${ta})`;
+                        ctx.lineWidth = tw;
+                        ctx.beginPath();
+                        ctx.moveTo(p.history[i-1].x, p.history[i-1].y);
+                        ctx.lineTo(p.history[i].x,   p.history[i].y);
+                        ctx.stroke();
+                    }
+                }
+
+                // Glow halo
+                const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 1.75);
+                glow.addColorStop(0, `rgba(${r},${g},${b},${a * 0.25})`);
+                glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * 1.75, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core shape
+                ctx.fillStyle = `rgba(${r},${g},${b},${a})`;
+
+                if (p.shape === 'circle') {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+
+                } else if (p.shape === 'square') {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.angle);
+                    ctx.fillRect(-p.size/2, -p.size/2, p.size, p.size);
+                    ctx.restore();
+
+                } else if (p.shape === 'spark') {
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(Math.atan2(p.vy, p.vx));
+                    ctx.beginPath();
+                    ctx.ellipse(0, 0, p.size * 1.5, p.size * 0.3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+
+                } else if (p.shape === 'star') {
+                    const r1 = p.size * 0.2, r2 = p.size * 0.45;
+                    const pts = 5;
+                    ctx.beginPath();
+                    for (let i = 0; i < pts * 2; i++) {
+                        const rad = i % 2 === 0 ? r2 : r1;
+                        const ang = p.angle + (Math.PI / pts) * i;
+                        i === 0
+                            ? ctx.moveTo(p.x + Math.cos(ang) * rad, p.y + Math.sin(ang) * rad)
+                            : ctx.lineTo(p.x + Math.cos(ang) * rad, p.y + Math.sin(ang) * rad);
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+
+            const filename = mode === 'bg' ? 'aether_withbg.png' : 'aether.png';
+            offscreen.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            }, 'image/png');
+        }
+
+        // ── Presets ───────────────────────────────────────────────────
+
+        const PRESETS = [
+            'celebration', 'galaxy', 'lava', 'snow',
+            'neon', 'aurora', 'confetti', 'void'
+        ];
+        const PRESET_LABELS = {
+            celebration: '🎉 celebration',
+            galaxy:      '🌌 galaxy drift',
+            lava:        '🌋 lava burst',
+            snow:        '❄️ snowfall',
+            neon:        '⚡ neon storm',
+            aurora:      '🌈 aurora',
+            confetti:    '🎊 confetti',
+            void:        '🌑 void pulse',
+        };
+        let presetIndex = 0;
+
+        function cyclePreset(e) {
+            const name = PRESETS[presetIndex];
+            presetIndex = (presetIndex + 1) % PRESETS.length;
+            const btn = document.getElementById('surpriseBtn');
+            if (presetIndex === 0) {
+                btn.textContent = '✨ surprise me!';
+            } else {
+                btn.textContent = PRESET_LABELS[PRESETS[presetIndex]];
+            }
+            applyPreset(name, e);
+        }
+
+        function applyPreset(name, e) {
+            sparkleBtn(e);
+            clearField();
+
+            if (name === 'celebration') {
+                col1 = color('#f97316'); col2 = color('#fde68a');
+                document.getElementById('color1').value = '#f97316';
+                document.getElementById('color2').value = '#fde68a';
+                gravity = 0.08; burstCount = 120; particleSize = 4; fadeAmt = 12;
+                launchMode = 'firework';
+                syncSliders();
+                setLaunchMode('firework', document.querySelector('.tool-btn'));
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => burstFirework(random(width*0.2, width*0.8), random(height*0.2, height*0.7)), i * 250);
+                }
+
+            } else if (name === 'galaxy') {
+                col1 = color('#9B87F5'); col2 = color('#06b6d4');
+                document.getElementById('color1').value = '#9B87F5';
+                document.getElementById('color2').value = '#06b6d4';
+                gravity = 0.01; burstCount = 60; particleSize = 3; fadeAmt = 5;
+                launchMode = 'sparkle';
+                syncSliders();
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.textContent.includes('sparkle')));
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => burstSparkle(random(width), random(height)), i * 180);
+                }
+
+            } else if (name === 'lava') {
+                col1 = color('#ef4444'); col2 = color('#f97316');
+                document.getElementById('color1').value = '#ef4444';
+                document.getElementById('color2').value = '#f97316';
+                gravity = 0.28; burstCount = 40; particleSize = 6; fadeAmt = 22;
+                launchMode = 'fountain';
+                syncSliders();
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.textContent.includes('fountain')));
+
+                // Fixed vents scattered across canvas, fire in staggered waves
+                const ventXs = [0.15, 0.3, 0.5, 0.68, 0.85];
+                let wave = 0;
+                // Initial burst — fire all vents once immediately
+                ventXs.forEach(vx => burstLava(width * vx, height * random(0.75, 0.92)));
+                // Then keep firing random vents every 400ms
+                lavaInterval = setInterval(() => {
+                    // Pick 2 random vents per tick to keep particle count low
+                    const picked = [...ventXs].sort(() => Math.random() - 0.5).slice(0, 2);
+                    picked.forEach(vx => {
+                        // Vary y slightly so it feels alive
+                        const vy = random(0.7, 0.92);
+                        burstLava(width * vx + random(-15, 15), height * vy);
+                    });
+                    wave++;
+                    // Stop after 20 waves (~8s) so it doesn't run forever
+                    if (wave >= 20) { clearInterval(lavaInterval); lavaInterval = null; }
+                }, 400);
+
+            } else if (name === 'snow') {
+                col1 = color('#e0f2fe'); col2 = color('#bfdbfe');
+                document.getElementById('color1').value = '#e0f2fe';
+                document.getElementById('color2').value = '#bfdbfe';
+                gravity = 0.04; burstCount = 40; particleSize = 3; fadeAmt = 4;
+                launchMode = 'sparkle';
+                syncSliders();
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.textContent.includes('sparkle')));
+                for (let i = 0; i < 10; i++) {
+                    setTimeout(() => burstSparkle(random(width), random(height*0.3)), i * 120);
+                }
+
+            } else if (name === 'neon') {
+                col1 = color('#22d3ee'); col2 = color('#a855f7');
+                document.getElementById('color1').value = '#22d3ee';
+                document.getElementById('color2').value = '#a855f7';
+                gravity = 0.03; burstCount = 150; particleSize = 3; fadeAmt = 8;
+                launchMode = 'firework';
+                syncSliders();
+                setLaunchMode('firework', document.querySelector('.tool-btn'));
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => burstFirework(random(width*0.1, width*0.9), random(height*0.1, height*0.8)), i * 150);
+                }
+
+            } else if (name === 'aurora') {
+                col1 = color('#34d399'); col2 = color('#818cf8');
+                document.getElementById('color1').value = '#34d399';
+                document.getElementById('color2').value = '#818cf8';
+                gravity = 0.005; burstCount = 80; particleSize = 4; fadeAmt = 3;
+                launchMode = 'comet';
+                syncSliders();
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.textContent.includes('comet')));
+                for (let i = 0; i < 6; i++) {
+                    setTimeout(() => burstComet(random(width*0.1, width*0.5), random(height*0.1, height*0.5)), i * 300);
+                }
+
+            } else if (name === 'confetti') {
+                col1 = color('#f43f5e'); col2 = color('#facc15');
+                document.getElementById('color1').value = '#f43f5e';
+                document.getElementById('color2').value = '#facc15';
+                gravity = 0.15; burstCount = 60; particleSize = 4; fadeAmt = 14;
+                launchMode = 'firework';
+                syncSliders();
+                setLaunchMode('firework', document.querySelector('.tool-btn'));
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => burstFirework(random(width*0.15, width*0.85), random(height*0.2, height*0.6)), i * 200);
+                }
+
+            } else if (name === 'void') {
+                col1 = color('#6366f1'); col2 = color('#0f172a');
+                document.getElementById('color1').value = '#6366f1';
+                document.getElementById('color2').value = '#0f172a';
+                gravity = 0.0; burstCount = 90; particleSize = 3; fadeAmt = 40;
+                launchMode = 'sparkle';
+                syncSliders();
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.textContent.includes('sparkle')));
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => burstSparkle(width/2 + random(-80,80), height/2 + random(-80,80)), i * 200);
+                }
+            }
+        }
+
+        function syncSliders() {
+            document.getElementById('gravSlider').value  = Math.round(gravity * 100);
+            document.getElementById('countSlider').value = burstCount;
+            document.getElementById('fadeSlider').value  = fadeAmt;
+            document.getElementById('sizeSlider').value  = particleSize;
+            document.getElementById('gravVal').textContent  = gravity.toFixed(2);
+            document.getElementById('countVal').textContent = burstCount;
+            document.getElementById('fadeVal').textContent  = fadeAmt;
+            document.getElementById('sizeVal').textContent  = particleSize;
+        }
+
+        function sparkleBtn(e) {
+            if (!e) return;
+            const btn = e.currentTarget;
+            const emojis = ['🌟', '🌟', '🌟', '✨', '💫'];
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    const span = document.createElement('span');
+                    span.className = 'sparkle';
+                    span.textContent = emojis[floor(random(emojis.length))];
+                    span.style.left = (15 + Math.random() * 70) + '%';
+                    span.style.top  = (15 + Math.random() * 70) + '%';
+                    btn.appendChild(span);
+                    setTimeout(() => span.remove(), 700);
+                }, i * 100);
+            }
+        }
+
+        function windowResized() {
+            const cw = document.querySelector('.canvas-container').clientWidth;
+            const newSize = Math.min(cw - 150, 750);
+            if (newSize !== canvasSize) {
+                canvasSize = newSize;
+                resizeCanvas(canvasSize, canvasSize);
+                background(8, 8, 20);
+                particles = [];
+            }
+        }
+    </script>
+</body>
+</html>
